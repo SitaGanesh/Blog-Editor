@@ -181,15 +181,7 @@ const handleSubmit = async (e) => {
 
 
 const getPreviewContent = () => content || '<p>No content yet</p>'; 
-// Return blog content or placeholder if empty
 
-const getFirstImageUrl = () => {
-  if (!content) return null; // Return null if no content
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(content, 'text/html');
-  const firstImg = doc.querySelector('img');
-  return firstImg ? firstImg.src : null; // Extract first image URL if any
-};
 
 const getTagsArray = () => 
   tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
@@ -280,7 +272,6 @@ if (loading && id) return <div className="flex justify-center items-center h-64"
         </form>
       ) : (
         <div className="space-y-6">
-          {getFirstImageUrl() && <img src={getFirstImageUrl()} alt="Blog Visual" className="w-full rounded-md" />}
           <h2 className="text-3xl font-bold">{title || 'Untitled Blog'}</h2>
           <div className="prose" dangerouslySetInnerHTML={{ __html: getPreviewContent() }} />
           {tags && (
