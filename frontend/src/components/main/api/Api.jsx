@@ -6,21 +6,18 @@ const API_URL = 'http://localhost:5000';
 // Handles fetch response
 const handleResponse = async (response) => {
   const contentType = response.headers.get('content-type');
-
-  // If response is JSON
   if (contentType && contentType.includes('application/json')) {
     const data = await response.json();
     if (!response.ok) {
-      // Throw error from JSON response
-      throw new Error(data.error || 'Something went wrong');
+      console.log('Server error response:', { status: response.status, data }); // Log status and data
+      throw new Error(data.error || `Request failed with status ${response.status}`);
     }
-    return data; // Return parsed JSON
+    return data;
   } else {
-    // Handle non-JSON responses (e.g. plain text or HTML)
     if (!response.ok) {
-      throw new Error('Server error: ' + response.status);
+      throw new Error(`Server error: ${response.status}`);
     }
-    return { message: 'Success' }; // Fallback success response
+    return { message: 'Success' };
   }
 };
 
@@ -29,18 +26,16 @@ export const fetchBlogs = async (token) => {
   try {
     // Set Authorization header if token exists
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-
+    console.log('Fetching blogs with headers:', headers);
     // Fetch blogs from API
     const response = await fetch(`${API_URL}/api/blogs`, {
-      headers,
-      credentials: 'include' // Include cookies if needed
+      headers// Include cookies if needed
     });
-
     // Log and parse raw text response
     const text = await response.text();
     console.log('Raw response:', text);
     const data = JSON.parse(text);
-
+    console.log('Fetched blogs:', data);
     // Handle unauthorized response
     if (!response.ok) {
       if (response.status === 401) {
@@ -72,8 +67,7 @@ export const fetchBlog = async (id, token) => {
 
     // Fetch the blog by ID from the API
     const response = await fetch(`${API_URL}/api/blogs/${id}`, {
-      headers,
-      credentials: 'include' // Include credentials if needed
+      headers
     });
 
     // Handle and return parsed response
@@ -88,75 +82,41 @@ export const fetchBlog = async (id, token) => {
 
 export const saveDraft = async (data, token) => {
   try {
-    // Ensure the user is authenticated
     if (!token) throw new Error('Authentication required');
-
-    // Send POST request to save or update the draft
+    console.log('Token sent to /save-draft:', token); // Log the token
     const response = await fetch(`${API_URL}/api/blogs/save-draft`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      credentials: 'include',
-      body: JSON.stringify(data) // Send blog data in request body
+      body: JSON.stringify(data)
     });
-
-    // Parse and return the response
     return handleResponse(response);
   } catch (error) {
-    // Log and rethrow any errors
     console.error('Error saving draft:', error);
     throw error;
   }
 };
 
 
-export const autoSaveDraft = async (data, token) => {
-  try {
-    // Check for authentication
-    if (!token) throw new Error('Authentication required');
-
-    // Send draft data to the backend for auto-saving
-    const response = await fetch(`${API_URL}/api/blogs/save-draft`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      credentials: 'include',
-      body: JSON.stringify(data) // Blog content to save
-    });
-
-    // Handle and return server response
-    return handleResponse(response);
-  } catch (error) {
-    // Log any errors during auto-save
-    console.error('Error auto-saving draft:', error);
-    throw error;
-  }
-};
 
 export const publishBlog = async (data, token) => {
   try {
-    // Ensure user is authenticated
     if (!token) throw new Error('Authentication required');
-
-    // Send blog data to backend to publish
+    console.log('Token sent to /publish:', token); // Log the token
     const response = await fetch(`${API_URL}/api/blogs/publish`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      credentials: 'include',
-      body: JSON.stringify(data) // Blog details to publish
+      body: JSON.stringify(data)
     });
-
-    // Process and return response from server
-    return handleResponse(response);
+    const result = await handleResponse(response);
+    console.log('Publish response:', result);
+    return result;
   } catch (error) {
-    // Log and rethrow any error encountered
     console.error('Error publishing blog:', error);
     throw error;
   }
@@ -172,7 +132,6 @@ export const deleteBlog = async (id, token) => {
     const response = await fetch(`${API_URL}/api/blogs/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` },
-      credentials: 'include'
     });
 
     // Handle and return API response
@@ -192,8 +151,7 @@ export const getMyBlogs = async (token) => {
 
     // Fetch blogs belonging to current user
     const response = await fetch(`${API_URL}/api/blogs/my`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-      credentials: 'include'
+      headers: { 'Authorization': `Bearer ${token}` }
     });
 
     // Handle and return API response

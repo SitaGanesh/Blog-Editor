@@ -45,7 +45,7 @@ def signup():
         
         # Create access token
         access_token = create_access_token(
-            identity=new_user.id,
+            identity=str(new_user.id),
             expires_delta=timedelta(days=7)
         )
         
@@ -87,7 +87,7 @@ def login():
     if user and bcrypt.check_password_hash(user.password, password):
         # Create access token
         access_token = create_access_token(
-            identity=user.id,
+            identity=str(user.id),
             expires_delta=timedelta(days=7)
         )
         # Returns success with the token and user details.
@@ -108,7 +108,7 @@ def login():
 @jwt_required()
 def get_user():
     # Gets the current user ID from the JWT token.
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     # Retrieves the user from the database by ID.
     user = User.query.get(user_id)
     

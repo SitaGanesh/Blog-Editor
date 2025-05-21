@@ -41,7 +41,7 @@ const handleDelete = async (id) => {
 };
 
 const handleEdit = (id) => {
-  navigate(`/blog/${id}`); // Navigate to edit draft page
+  navigate(`/edit-blog/${id}`); // Navigate to edit draft page
 };
 
 const handlePublish = async (draft) => {

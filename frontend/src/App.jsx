@@ -57,10 +57,10 @@ function App() {
         <Route path="/" element={<All />} />
         <Route path="/login" element={<Login onLogin={handleLogin} />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/api/blogs" element={<Blogs />} />
-        <Route path="/blog" element={<ProtectedRoute><CreateBlog /></ProtectedRoute>} />
-        <Route path="/blog/:id" element={<ProtectedRoute><CreateBlog /></ProtectedRoute>} />
-        <Route path="/api/blogs/save-draft" element={<Drafts />} />
+        <Route path="/blogs" element={<Blogs />} />
+        <Route path="/create-blog" element={<ProtectedRoute><CreateBlog /></ProtectedRoute>} />
+        <Route path="/edit-blog/:id" element={<ProtectedRoute><CreateBlog /></ProtectedRoute>} />
+        <Route path="/drafts" element={<Drafts />} />
       </Routes>
     </>
   );

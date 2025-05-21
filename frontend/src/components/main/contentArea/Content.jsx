@@ -29,13 +29,13 @@ const Content = () => {
 
                         <div className="flex justify-start gap-3 sm:gap-4 mt-6 sm:mt-10">
                             <button
-                                onClick={() => navigate('/api/blogs')}
+                                onClick={() => navigate('/blogs')}
                                 className="w-[130px] sm:w-[140px] md:w-[150px] lg:w-[160px] h-[44px] sm:h-[47px] bg-[#3E27FF] text-white rounded-full cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#2E1ED9] hover:shadow-lg"
                             >
                                 Retrieve all blogs
                             </button>
                             <button className="w-[130px] sm:w-[140px] md:w-[150px] lg:w-[160px] h-[44px] sm:h-[47px] bg-white text-[#3E27FF] border-2 border-[#3E27FF] rounded-full cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#F3F4F6] hover:shadow-md"
-                                onClick={() => navigate('/blog')}>
+                                onClick={() => navigate('/create-blog')}>
                                 Create Blog
                             </button>
                         </div>

@@ -10,8 +10,8 @@ from datetime import datetime
 
 # Defines a Blog model with fields for id, title, content, tags, status, timestamps, user relationship, and links each blog to a user.
 class Blog(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(255), nullable=False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Auto-incrementing ID
+    title = db.Column(db.String(255), nullable=False)  # Use 'title', not 'subject'
     content = db.Column(db.Text, nullable=False)
     tags = db.Column(db.String(255))
     status = db.Column(db.String(20), default='published')
@@ -19,7 +19,7 @@ class Blog(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    user = db.relationship('User', backref=db.backref('blogs', lazy=True))
+    user = db.relationship('User', backref='blogs')
 
 # Defines a User model with id, username, unique email, password, and Flask-Login user methods.
 class User(db.Model,UserMixin):

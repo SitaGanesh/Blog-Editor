@@ -1,50 +1,54 @@
-// this components deals with showing the blog contents after it got published
-
+// Blogs.jsx
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { fetchBlogs, deleteBlog } from './Api';
 import { showSuccessToast, showErrorToast } from '../../../utils/toastHelper';
 
 const Blogs = () => {
-  const [blogs, setBlogs] = useState([]);          // Store blogs
-  const [loading, setLoading] = useState(true);    // Loading state
-  const token = localStorage.getItem('token');     // Auth token
-  const navigate = useNavigate();                   // Router navigation
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem('token');
+  const navigate = useNavigate();
+  const location = useLocation();  // Added to detect route changes
 
-  const load = () => {
-    setLoading(true);                               // Start loading
-    fetchBlogs(token)                               // Fetch blogs from API
-      .then(data => {
-        setBlogs(data);                             // Save blogs to state
-        setLoading(false);                          // End loading
-      })
-      .catch(() => {
-        showErrorToast('Failed to load blogs');    // Show error toast
-        setLoading(false);                          // End loading even on error
-      });
+  
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchBlogs(token);
+      setBlogs(data);
+    } catch {
+      showErrorToast('Failed to load blogs');
+    } finally {
+      setLoading(false);
+    }
   };
-
-
+  
   useEffect(() => {
-    load();  // Load blogs on component mount
-  }, []);
+    load();
+    if (location.state?.newBlogId) {
+      console.log('New blog published with ID:', location.state.newBlogId);
+      // Optionally scroll to or highlight the new blog
+    }
+  }, [location.pathname, location.state]);
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this blog?')) return; // Confirm deletion
+    if (!window.confirm('Are you sure you want to delete this blog?')) return;
     try {
-      await deleteBlog(id, token);          // Call API to delete blog
-      showSuccessToast('Blog deleted successfully');  // Notify success
-      load();                              // Reload blogs after deletion
+      await deleteBlog(id, token);
+      showSuccessToast('Blog deleted successfully');
+      load();  // Already refreshes after delete
     } catch {
-      showErrorToast('Failed to delete blog');  // Notify error
+      showErrorToast('Failed to delete blog');
     }
   };
 
   const handleEdit = (id) => {
-    navigate(`/blog/${id}`);  // Navigate to blog edit page
+    navigate(`/edit-blog/${id}`);
   };
 
-  if (loading) return <div className="flex justify-center items-center h-64">Loading blogs...</div>;  // Loading state UI
+  if (loading) return <div className="flex justify-center items-center h-64">Loading blogs...</div>;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -54,7 +58,7 @@ const Blogs = () => {
           <p className="text-gray-600 mb-4">No blogs available yet</p>
           {token && (
             <button
-              onClick={() => navigate('/blog')}
+              onClick={() => navigate('/create-blog')}
               className="px-6 py-2 bg-[#3E27FF] text-white rounded-md hover:bg-[#2E1ED9]"
             >
               Create Your First Blog

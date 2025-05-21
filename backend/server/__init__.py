@@ -39,6 +39,10 @@ def create_app():
     # Sets up JWTManager for handling JWT authentication in the app.
     jwt = JWTManager(app)
     
+    # Always serialize user_id as string in JWT
+    @jwt.user_identity_loader
+    def user_identity_lookup(user_id):
+        return str(user_id)
     # Imports the views and auth blueprints from the current package
     from .views import views
     from .auth import auth
@@ -48,7 +52,7 @@ def create_app():
     app.register_blueprint(views,url_prefix='/')
     
     # Imports the models schemas
-    from .models import User,Blog
+    from .models import User
     
     # Initializes LoginManager, sets the login view to 'auth.login', and links it to the app.
     login_manager=LoginManager()

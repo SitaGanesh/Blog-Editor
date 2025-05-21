@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { fetchBlog, saveDraft, autoSaveDraft, publishBlog} from './Api';
+import { fetchBlog, saveDraft, publishBlog} from './Api';
 import { useParams, useNavigate } from 'react-router-dom';
 import { showSuccessToast, showErrorToast } from '../../../utils/toastHelper';
 import debounce from 'lodash/debounce';
@@ -68,30 +68,26 @@ useEffect(() => {
 
 
   // Debounced auto-save to avoid excessive calls
+// Replace debouncedAutoSave to use saveDraft
 const debouncedAutoSave = useCallback(
   debounce(async () => {
-    if (!token) return;                 // Require auth token
-    if (!title.trim()) return;          // Skip if title empty
-    if (title === lastSaved.title &&    // Skip if no changes
-        content === lastSaved.content &&
-        tags === lastSaved.tags) return;
-
+    if (!token || !title.trim() || (title === lastSaved.title && content === lastSaved.content && tags === lastSaved.tags)) return;
     setLoading(true);
     const data = { id: blogId || null, title, content, tags, status: 'draft' };
     try {
-      const response = await autoSaveDraft(data, token);
+      const response = await saveDraft(data, token);
       if (response.error) {
-        showErrorToast(response.error);  // Show error from response
+        showErrorToast(response.error);
       } else {
-        showSuccessToast('Draft auto-saved');  // Confirm auto-save
-        setLastSaved({ title, content, tags }); // Update last saved state
-        if (!blogId && response.blog) {         // If new draft ID returned
+        showSuccessToast('Draft auto-saved');
+        setLastSaved({ title, content, tags });
+        if (!blogId && response.blog) {
           setBlogId(response.blog);
           localStorage.setItem('draftId', response.blog);
         }
       }
     } catch {
-      showErrorToast('Error auto-saving draft');  // Handle failure
+      showErrorToast('Error auto-saving draft');
     } finally {
       setLoading(false);
     }
@@ -115,16 +111,16 @@ const handleImageInsert = () => {
   }
 };
 
-// Submit blog for publishing
+
 const handleSubmit = async (e) => {
   e.preventDefault();
   if (!title.trim() || !content.trim()) {
-    showErrorToast('Title and content are required for publishing'); // Validate inputs
+    showErrorToast('Title and content are required for publishing');
     return;
   }
   if (!token) {
-    showErrorToast('Please log in to publish'); // Ensure user is logged in
-    navigate('/login');                         // Redirect to login if not
+    showErrorToast('Please log in to publish');
+    navigate('/login');
     return;
   }
 
@@ -134,14 +130,15 @@ const handleSubmit = async (e) => {
   try {
     const response = await publishBlog(blogData, token);
     if (response.error) {
-      showErrorToast(response.error); // Show API error
+      showErrorToast(response.error);
     } else {
-      showSuccessToast('Blog published successfully'); // Success feedback
-      localStorage.removeItem('draftId');              // Clear saved draft ID
-      setTimeout(() => navigate('/blogs'), 500);       // Redirect to blog list
+      showSuccessToast('Blog published successfully');
+      localStorage.removeItem('draftId');
+      // Pass the new blog ID via navigation state
+      navigate('/blogs', { state: { newBlogId: response.blog } });
     }
   } catch {
-    showErrorToast('Error publishing blog');           // Handle unexpected errors
+    showErrorToast('Error publishing blog');
   } finally {
     setLoading(false);
   }

@@ -21,7 +21,7 @@ def hello():
 @jwt_required()
 def save_draft():
     # Retrieves the current user's ID from the JWT token.
-    user_id = get_jwt_identity()    
+    user_id = int(get_jwt_identity())    
     # Gets JSON data from the request.
     data = request.get_json()
     # Extracts title, content, tags, and sets default status to 'draft'.
@@ -61,46 +61,37 @@ def save_draft():
 @views.route('/api/blogs/publish', methods=['POST'])
 @jwt_required()
 def publish_blog():
-    # Retrieves the current user ID from the JWT token.
-    user_id = get_jwt_identity()
-    # Parses JSON data from the request.
+    try:
+        user_id = int(get_jwt_identity())
+        data = request.get_json()
+        title = data.get('title', '')
+        content = data.get('content', '')
+        tags = data.get('tags', '')
+        status = 'published'
 
-    # Returns success message with the new blog ID.
-    data = request.get_json()
+        if not title or not content:
+            return jsonify({'error': 'Title and content are required'}), 400
 
-    # Extracts title, content, tags, and sets status to 'published'.
-    title = data.get('title', '')
-    content = data.get('content', '')
-    tags = data.get('tags', '')
-    status = 'published'
-
-    # Returns  an error if title or content is missing.
-    if not title or not content:
-        return jsonify({'error': 'Title and content are required'}), 400
-
-    # Checks if a blog_id is provided to update an existing blog.
-    blog_id = data.get('id')
-    if blog_id:
-        blog = Blog.query.filter_by(id=blog_id, user_id=user_id).first()
-        # Retrieves the blog by ID and user, returns error if not found.
-        if not blog:
-            return jsonify({'error': 'Blog not found'}), 404
-        # Updates the blog fields, status, and timestamp, then commits changes.
-        blog.title = title
-        blog.content = content
-        blog.tags = tags
-        blog.status = status
-        blog.updated_at = datetime.utcnow()
-        db.session.commit()
-        return jsonify({'message': 'Blog published', 'blog': blog.id}), 200
-
-    # If no blog_id, creates a new published blog with the given data.
-    blog = Blog(title=data['title'], content=data['content'], status='published')    
-    db.session.add(blog)
-    # Adds and commits the new blog to the database.
-    db.session.commit()
-    # Returns success message with the updated blog ID.
-    return jsonify({'message': 'Blog published', 'blog': blog.id}), 201
+        blog_id = data.get('id')
+        if blog_id:
+            blog = Blog.query.filter_by(id=blog_id, user_id=user_id).first()
+            if not blog:
+                return jsonify({'error': 'Blog not found'}), 404
+            blog.title = title
+            blog.content = content
+            blog.tags = tags
+            blog.status = status
+            blog.updated_at = datetime.utcnow()
+            db.session.commit()
+            return jsonify({'message': 'Blog updated and published', 'blog': blog.id}), 200
+        else:
+            blog = Blog(title=title, content=content, tags=tags, user_id=user_id, status=status)
+            db.session.add(blog)
+            db.session.commit()
+            return jsonify({'message': 'Blog published', 'blog': blog.id}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to publish blog: {str(e)}'}), 500
 
 
 # Get all blogs (including drafts) for the authenticated user.
@@ -108,7 +99,7 @@ def publish_blog():
 @jwt_required()
 def get_my_blogs():
     # Retrieves current user ID from the JWT token.
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     # Queries all blogs authored by the user.
     blogs = Blog.query.filter_by(user_id=user_id).all()
     # Returns a list of the user's blogs as JSON.
@@ -125,18 +116,17 @@ def get_my_blogs():
 
 # Read a single blog by ID, allowing optional JWT authentication.
 @views.route('/api/blogs/<int:id>', methods=['GET'])
+@jwt_required(optional=True)
 def get_blog(id):
-    # Gets the current user ID from the JWT token if present.
     user_id = get_jwt_identity()
-    # Retrieves the blog by its ID.
+    if user_id is not None:
+        user_id = int(user_id)
     blog = Blog.query.get(id)
-    # Returns error if blog not found.
     if not blog:
         return jsonify({'error': 'Blog not found'}), 404
-    # Restricts access to draft blogs only to their owners.
-    if blog.status == 'draft' and blog.user_id != user_id:
-        return jsonify({'error': 'Unauthorized'}), 403
-    # Returns blog details as JSON.
+    if blog.status == 'draft':
+        if user_id is None or blog.user_id != user_id:
+            return jsonify({'error': 'Unauthorized'}), 403
     return jsonify({
         'id': blog.id,
         'title': blog.title,
@@ -170,7 +160,7 @@ def list_published_blogs():
 @jwt_required()
 def delete_blog(id):
     # Retrieves the current user ID from the JWT token.
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     # Queries the blog by ID and user to ensure ownership.
     blog = Blog.query.filter_by(id=id, user_id=user_id).first()
     # Returns an error if the blog is not found.
